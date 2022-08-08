@@ -1,0 +1,26 @@
+from ctypes import alignment
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QPushButton, QLabel,
+    QLineEdit, QVBoxLayout, QHBoxLayout,
+)
+from PyQt6.QtCore import Qt
+import sys
+
+class BlueBotWidget(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        cover_layout = QVBoxLayout()
+        cover_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(cover_layout)
+
+        self.center_label = QLabel()
+        self.center_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.center_label.setText('Blue Bot')
+        self.center_label.setStyleSheet('font-size: 30px; font-weight: 800')
+
+        self.sub_label = QLabel('not yet implemented...')
+        self.sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sub_label.setStyleSheet('font-size: 15px')
+        
+        cover_layout.addWidget(self.center_label)
+        cover_layout.addWidget(self.sub_label)

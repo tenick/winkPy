@@ -3,7 +3,7 @@ import UI
 from UIWorker.ringworker import RingWorker
 
 from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QVBoxLayout, QSplitter, QStatusBar
+    QWidget, QPushButton, QVBoxLayout, QSplitter, QStatusBar, QStackedWidget
 )
 from PyQt6.QtCore import QThread, pyqtSlot
 
@@ -60,8 +60,20 @@ class RingWindow(QWidget):
         self.start_btn.clicked.connect(self.start)
         main_layout.addWidget(self.start_btn)
 
-        # bot widget
-        self.bot_widget = UI.YellowBotWidget()
+        # test button
+        self.test_btn = QPushButton('test')
+        self.test_btn.clicked.connect(self.test)
+        main_layout.addWidget(self.test_btn)
+
+        # bot stack widget
+        self.bot_stack = QStackedWidget()
+
+        self.bot_stack_cover = UI.Bot.CoverBotWidget()
+        self.yellow_bot_widget = UI.Bot.YellowBotWidget()
+        self.blue_bot_widget = UI.Bot.BlueBotWidget()
+        self.bot_stack.addWidget(self.bot_stack_cover)
+        self.bot_stack.addWidget(self.yellow_bot_widget)
+        self.bot_stack.addWidget(self.blue_bot_widget)
 
         # history widget
         self.history_widget = UI.BetHistoryWidget([
@@ -70,12 +82,12 @@ class RingWindow(QWidget):
         self.history_widget.redraw()
 
         # horizontal splitter between bot and history cell
-        splitter = QSplitter()
-        splitter.addWidget(self.bot_widget)
-        splitter.addWidget(self.history_widget)
-        splitter.setStyleSheet('QSplitter::handle { background-color:#555; }')
+        self.splitter = QSplitter()
+        self.splitter.addWidget(self.bot_stack)
+        self.splitter.addWidget(self.history_widget)
+        self.splitter.setStyleSheet('QSplitter::handle { background-color:#555; }')
 
-        main_layout.addWidget(splitter)
+        main_layout.addWidget(self.splitter)
 
         # status bar
         self.status_bar = QStatusBar()
@@ -87,6 +99,13 @@ class RingWindow(QWidget):
         # start bot dialog
         self.setup_bot_dialog = UI.SetupBotDialog(self)
         self.setup_bot_dialog.done_setup.connect(self.__done_bot_setup)
+
+        
+    def test(self):
+        if self.bot_stack.currentIndex() == 0:
+            self.bot_stack.setCurrentIndex(1)
+        else:
+            self.bot_stack.setCurrentIndex(0)
 
     def start(self):
         if not self.ring_worker.started:
@@ -104,8 +123,10 @@ class RingWindow(QWidget):
             self.status_bar.showMessage('Ring and Bot Stopped')
             self.start_btn.setText('Start Ring')
 
-    @pyqtSlot()
-    def __done_bot_setup(self):
+    @pyqtSlot(int)
+    def __done_bot_setup(self, selected_bot_index):
+        self.bot_stack.setCurrentIndex(selected_bot_index)
+
         self.ring_worker.ring_driver.init_ring()
 
         self.status_bar.showMessage('Bot Started')

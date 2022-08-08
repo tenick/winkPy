@@ -1,6 +1,7 @@
 import re
 from enum import IntEnum
 from collections import deque
+from typing import Callable
 
 import ring as Ring
 
@@ -26,7 +27,7 @@ class RingDriver:
             return RingState.CAN_BET
 
     @staticmethod
-    def WaitForState(state: RingState):
+    def WaitForState(state: RingState) -> Callable[[uc.Chrome], bool]:
         def _predicate(driver: uc.Chrome):
             wheel = driver.find_element(By.XPATH, Ring.WHEEL_CURRENT_STATE_XPATH)
             wheel_class = wheel.get_attribute('class')
@@ -42,12 +43,12 @@ class RingDriver:
         self.profile = r'C:\Users\usare\AppData\Local\Google\Chrome\User Data\Default'
         self.options = uc.ChromeOptions()
         self.options.add_argument(f"user-data-dir={self.profile}")
-        self.driver = uc.Chrome(options=self.options, use_subprocess=True)
+        self.driver = uc.Chrome(driver_executable_path='./chromedriver.exe', options=self.options, use_subprocess=True)
         
         # open Wink Ring in google chrome
         self.driver.get(Ring.LINK)
 
-    def init_ring(self):
+    def init_ring(self) -> None:
         # switch to wink ring's game iFrame
         WebDriverWait(self.driver, 100).until(EC.frame_to_be_available_and_switch_to_it(0))
         print("successfully switched to frame")
@@ -59,7 +60,7 @@ class RingDriver:
         self.bet50x = self.driver.find_element(By.XPATH, Ring.BET50X_XPATH)
 
     
-    def wait_for_ring_state(self, state: RingState):
+    def wait_for_ring_state(self, state: RingState) -> None:
         WebDriverWait(self.driver, 100).until(self.WaitForState(state))
 
     def get_history(self) -> deque[Ring.Bet]:
@@ -76,6 +77,7 @@ class RingDriver:
             bet_history.append(Ring.TextToBet(bet))
         return bet_history
 
-    def stop(self):
+    def stop(self) -> None:
         self.driver.quit()
+        self.driver = None
 

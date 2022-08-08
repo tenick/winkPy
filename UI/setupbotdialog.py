@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal
 
 class SetupBotDialog(QDialog):
-    done_setup = pyqtSignal()
+    done_setup = pyqtSignal(int)
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
@@ -26,19 +26,18 @@ class SetupBotDialog(QDialog):
         self.setLayout(layout)
 
         # radio button group
-        bots_groupbox = QGroupBox('Choose Bot Strategy')
+        self.bots_groupbox = QGroupBox('Choose Bot Strategy')
         bots_groupbox_layout = QHBoxLayout()
-        bots_groupbox.setLayout(bots_groupbox_layout)
+        self.bots_groupbox.setLayout(bots_groupbox_layout)
 
         yellow_bot_radio_btn = QRadioButton('Yellow Bot')
         yellow_bot_radio_btn.setChecked(True)
 
         blue_bot_radio_btn = QRadioButton('Blue Bot')
-        blue_bot_radio_btn.setDisabled(True)
         bots_groupbox_layout.addWidget(yellow_bot_radio_btn)
         bots_groupbox_layout.addWidget(blue_bot_radio_btn)
 
-        layout.addWidget(bots_groupbox)
+        layout.addWidget(self.bots_groupbox)
 
         # finished setup widgets
         setup_label = QLabel('If done setting up wink, click the button below')
@@ -50,7 +49,13 @@ class SetupBotDialog(QDialog):
         layout.addWidget(setup_done_btn)
     
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        self.done_setup.emit()
+        # find out which bot was selected
+        selected = 0
+        for i, btn in enumerate(filter(lambda qObj: isinstance(qObj, QRadioButton), self.bots_groupbox.children())):
+            if btn.isChecked():
+                selected = i + 1
+                break
+        self.done_setup.emit(selected)
         return super().closeEvent(a0)
 
 
