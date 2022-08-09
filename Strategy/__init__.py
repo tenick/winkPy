@@ -1,0 +1,3 @@
+from Strategy.strategy_base import Strategy
+from Strategy.yellow_strategy import YellowStrategy
+from Strategy.blue_strategy import BlueStrategy

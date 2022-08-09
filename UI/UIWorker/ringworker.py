@@ -11,7 +11,7 @@ class RingWorker(QObject):
     renew_bet_history = pyqtSignal()
     # why use object instead of specific type (ring.Bet, in this case doesn't work) 
     # https://stackoverflow.com/questions/46973384/pyqt5-wrong-conversion-of-int-object-when-using-custom-signal
-    add_bet_to_history = pyqtSignal(object)
+    on_new_bet_result = pyqtSignal(object)
     ring_state_changed = pyqtSignal(object)
 
     def __init__(self) -> None:
@@ -49,7 +49,7 @@ class RingWorker(QObject):
             # send result to betting strategy, get resulting bet amount and bet multiplier
             # bet the resulting bet amount and bet multiplier
             resulting_bet : Bet = self.ring_driver.get_history()[-1]
-            self.add_bet_to_history.emit(resulting_bet)
+            self.on_new_bet_result.emit(resulting_bet)
 
             # wait for can't bet state
             if self.ring_driver.GetCurrentRingState() == RingState.CAN_BET:

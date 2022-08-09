@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
-class SetupBotDialog(QDialog):
+class SetupRingDialog(QDialog):
     done_setup = pyqtSignal(int)
 
     def __init__(self, parent) -> None:

@@ -14,7 +14,7 @@ class RingWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.__init_UI()
-        self.resize(700, 500)
+        self.resize(800, 500)
         self.setWindowTitle('Wink Bot')
         self.setStyleSheet('''
             QWidget { 
@@ -42,7 +42,7 @@ class RingWindow(QWidget):
 
         self.ring_worker.stop.connect(self.ring_worker_thread.quit)
         self.ring_worker.renew_bet_history.connect(self.__renew_bet_history)
-        self.ring_worker.add_bet_to_history.connect(self.__add_bet_to_history)
+        self.ring_worker.on_new_bet_result.connect(self.__on_new_bet_result)
         self.ring_worker.ring_state_changed.connect(self.__ring_state_changed)
 
         self.ring_worker_thread.started.connect(self.ring_worker.ring_loop)
@@ -55,15 +55,24 @@ class RingWindow(QWidget):
         main_layout.setSpacing(0)
         self.setLayout(main_layout)
 
-        # start ring button
-        self.start_btn = QPushButton('Start Ring')
-        self.start_btn.clicked.connect(self.start)
-        main_layout.addWidget(self.start_btn)
+        # buttons stack (buttons shown per state change)
+        self.button_stack = QStackedWidget()
+        self.button_stack.setMinimumHeight(50)
+        self.button_stack.setMaximumHeight(50)
 
-        # test button
-        self.test_btn = QPushButton('test')
-        self.test_btn.clicked.connect(self.test)
-        main_layout.addWidget(self.test_btn)
+        self.start_ring_btn = QPushButton('Start Ring')
+        self.start_ring_btn.clicked.connect(self.start_ring)
+
+        self.start_bot_btn = QPushButton('Start Bot')
+        self.start_bot_btn.clicked.connect(self.start_bot)
+
+        self.stop_btn = QPushButton('Stop')
+        self.stop_btn.clicked.connect(self.stop)
+        
+        self.button_stack.addWidget(self.start_ring_btn)
+        self.button_stack.addWidget(self.start_bot_btn)
+        self.button_stack.addWidget(self.stop_btn)
+        main_layout.addWidget(self.button_stack)
 
         # bot stack widget
         self.bot_stack = QStackedWidget()
@@ -82,12 +91,12 @@ class RingWindow(QWidget):
         self.history_widget.redraw()
 
         # horizontal splitter between bot and history cell
-        self.splitter = QSplitter()
-        self.splitter.addWidget(self.bot_stack)
-        self.splitter.addWidget(self.history_widget)
-        self.splitter.setStyleSheet('QSplitter::handle { background-color:#555; }')
+        self.bot_and_history_splitter = QSplitter()
+        self.bot_and_history_splitter.addWidget(self.bot_stack)
+        self.bot_and_history_splitter.addWidget(self.history_widget)
+        self.bot_and_history_splitter.setStyleSheet('QSplitter::handle { background-color:#555; }')
 
-        main_layout.addWidget(self.splitter)
+        main_layout.addWidget(self.bot_and_history_splitter)
 
         # status bar
         self.status_bar = QStatusBar()
@@ -97,42 +106,59 @@ class RingWindow(QWidget):
         main_layout.addWidget(self.status_bar)
 
         # start bot dialog
-        self.setup_bot_dialog = UI.SetupBotDialog(self)
-        self.setup_bot_dialog.done_setup.connect(self.__done_bot_setup)
+        self.setup_ring_dialog = UI.SetupRingDialog(self)
+        self.setup_ring_dialog.done_setup.connect(self.__done_ring_setup)
 
-        
-    def test(self):
-        if self.bot_stack.currentIndex() == 0:
-            self.bot_stack.setCurrentIndex(1)
-        else:
-            self.bot_stack.setCurrentIndex(0)
+    @pyqtSlot()
+    def start_ring(self):
+        self.ring_worker.start_ring()
 
-    def start(self):
-        if not self.ring_worker.started:
-            self.ring_worker.start_ring()
+        self.status_bar.showMessage('Ring Started')
 
-            self.start_btn.setText('Stop Ring')
-            self.status_bar.showMessage('Ring Started')
+        # run set up bot dialog
+        # setup consists of logging into TRX account, closing disclaimer or anything that covers screen that can cause ElementNotClickable error
+        self.setup_ring_dialog.exec()
 
-            # run set up bot dialog
-            # setup consists of logging into TRX account, closing disclaimer or anything that covers screen that can cause ElementNotClickable error
-            self.setup_bot_dialog.exec()
-        else:
-            self.ring_worker.stop_ring()
+        self.button_stack.setCurrentIndex(1)
+    
+    @pyqtSlot()
+    def start_bot(self):
+        self.button_stack.setCurrentIndex(2)
 
-            self.status_bar.showMessage('Ring and Bot Stopped')
-            self.start_btn.setText('Start Ring')
-
-    @pyqtSlot(int)
-    def __done_bot_setup(self, selected_bot_index):
-        self.bot_stack.setCurrentIndex(selected_bot_index)
-
-        self.ring_worker.ring_driver.init_ring()
-
-        self.status_bar.showMessage('Bot Started')
         self.__renew_bet_history()
         
         self.ring_worker_thread.start()
+    
+    @pyqtSlot()
+    def stop(self):
+        self.ring_worker.stop_ring()
+
+        self.button_stack.setCurrentIndex(0)
+
+        self.status_bar.showMessage('Ring and Bot Stopped')
+
+    @pyqtSlot(int)
+    def __done_ring_setup(self, selected_bot_index):
+        self.bot_stack.setCurrentIndex(selected_bot_index)
+
+        # start bot button styling based on selected bot
+        match selected_bot_index:
+            case 1:
+                self.start_bot_btn.setText('Start Yellow Bot')
+                self.start_bot_btn.setStyleSheet('''
+                    QPushButton::hover { background-color: #ffeec2; }
+                    QPushButton { background-color: #fbb709; color: black;}
+                ''')
+            case 2:
+                self.start_bot_btn.setText('Start Blue Bot')
+                self.start_bot_btn.setStyleSheet('''
+                    QPushButton::hover { background-color: #bde3ff; }
+                    QPushButton { background-color: #0094ff; color: black;}
+                ''')
+
+        self.ring_worker.ring_driver.init_ring()
+
+        self.status_bar.showMessage('Ring Started')
 
     @pyqtSlot()
     def __renew_bet_history(self):
@@ -141,7 +167,7 @@ class RingWindow(QWidget):
         self.history_widget.redraw()
 
     @pyqtSlot(Bet)
-    def __add_bet_to_history(self, bet: Bet):
+    def __on_new_bet_result(self, bet: Bet):
         self.history_widget.add_new_bet_to_history(bet)
         self.history_widget.redraw()
     
