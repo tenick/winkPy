@@ -2,6 +2,7 @@ import re
 from enum import IntEnum
 from collections import deque
 from typing import Callable
+import time
 
 import ring as Ring
 from ring import Bet
@@ -10,6 +11,7 @@ import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 
 
 class RingState(IntEnum):
@@ -60,7 +62,29 @@ class RingDriver:
         self.bet5x = self.driver.find_element(By.XPATH, Ring.BET5X_XPATH)
         self.bet50x = self.driver.find_element(By.XPATH, Ring.BET50X_XPATH)
 
+        self.trx_bet_amount_input = self.driver.find_element(By.XPATH, Ring.TRX_BET_AMOUNT_INPUT_XPATH)
+
     def do_bet(self, trx_size: int, bet_multiplier: Bet):
+        # set the bet amount input first (if necessary)
+        self.trx_bet_amount_input.click()
+        val = self.trx_bet_amount_input.get_attribute('value')
+        if int(val) != trx_size:
+            for _ in range(7):
+                self.trx_bet_amount_input.send_keys(Keys.BACK_SPACE)
+                time.sleep(0.08) # 80 ms
+            self.trx_bet_amount_input.send_keys(str(trx_size))
+        time.sleep(0.1)
+        # then proceed bet
+        # match bet_multiplier:
+        #     case Bet.X2:
+        #         self.bet2x.click()
+        #     case Bet.X3:
+        #         self.bet3x.click()
+        #     case Bet.X5:
+        #         self.bet5x.click()
+        #     case Bet.X50:
+        #         self.bet50x.click()
+        
         print('betting', trx_size, 'trx at', bet_multiplier)
     
     def wait_for_ring_state(self, state: RingState) -> None:
