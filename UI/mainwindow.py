@@ -10,7 +10,7 @@ from PyQt6.QtCore import QThread, pyqtSlot
 from Wink.ringdriver import RingState
 
 
-class RingWindow(QWidget):
+class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.__init_UI()
@@ -61,13 +61,13 @@ class RingWindow(QWidget):
         self.button_stack.setMaximumHeight(50)
 
         self.start_ring_btn = QPushButton('Start Ring')
-        self.start_ring_btn.clicked.connect(self.start_ring)
+        self.start_ring_btn.clicked.connect(self.__start_ring)
 
         self.start_bot_btn = QPushButton('Start Bot')
-        self.start_bot_btn.clicked.connect(self.start_bot)
+        self.start_bot_btn.clicked.connect(self.__start_bot)
 
         self.stop_btn = QPushButton('Stop')
-        self.stop_btn.clicked.connect(self.stop)
+        self.stop_btn.clicked.connect(self.__stop)
         
         self.button_stack.addWidget(self.start_ring_btn)
         self.button_stack.addWidget(self.start_bot_btn)
@@ -110,7 +110,7 @@ class RingWindow(QWidget):
         self.setup_ring_dialog.done_setup.connect(self.__done_ring_setup)
 
     @pyqtSlot()
-    def start_ring(self):
+    def __start_ring(self):
         self.ring_worker.start_ring()
 
         self.status_bar.showMessage('Ring Started')
@@ -122,15 +122,20 @@ class RingWindow(QWidget):
         self.button_stack.setCurrentIndex(1)
     
     @pyqtSlot()
-    def start_bot(self):
+    def __start_bot(self):
         self.button_stack.setCurrentIndex(2)
 
         self.__renew_bet_history()
+
+        self.bot_stack.currentWidget().update_strategy_inputs_with_UI_values()
+
+        # disable bot widget user interaction
+        self.bot_stack.currentWidget().setEnabled(False)
         
         self.ring_worker_thread.start()
     
     @pyqtSlot()
-    def stop(self):
+    def __stop(self):
         self.ring_worker.stop_ring()
 
         self.button_stack.setCurrentIndex(0)
@@ -140,6 +145,9 @@ class RingWindow(QWidget):
     @pyqtSlot(int)
     def __done_ring_setup(self, selected_bot_index):
         self.bot_stack.setCurrentIndex(selected_bot_index)
+
+        # enable bot widget user interaction
+        self.bot_stack.currentWidget().setEnabled(True)
 
         # start bot button styling based on selected bot
         match selected_bot_index:
@@ -158,6 +166,9 @@ class RingWindow(QWidget):
 
         self.ring_worker.ring_driver.init_ring()
 
+        # listen to strategy bet signal
+        self.bot_stack.currentWidget().strategy.do_bet.connect(self.ring_worker.ring_driver.do_bet)
+
         self.status_bar.showMessage('Ring Started')
 
     @pyqtSlot()
@@ -170,6 +181,9 @@ class RingWindow(QWidget):
     def __on_new_bet_result(self, bet: Bet):
         self.history_widget.add_new_bet_to_history(bet)
         self.history_widget.redraw()
+
+        # send new bet result to bot strategy
+        self.bot_stack.currentWidget().strategy.ring_result(bet)
     
     @pyqtSlot(RingState)
     def __ring_state_changed(self, state: RingState):
@@ -178,6 +192,8 @@ class RingWindow(QWidget):
                 self.status_bar.showMessage('Bot Betting Phase')
             case RingState.CANT_BET:
                 self.status_bar.showMessage('Bot Waiting For Betting Phase...')
+
+    
 
         
 

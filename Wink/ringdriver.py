@@ -4,6 +4,7 @@ from collections import deque
 from typing import Callable
 
 import ring as Ring
+from ring import Bet
 
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
@@ -59,6 +60,8 @@ class RingDriver:
         self.bet5x = self.driver.find_element(By.XPATH, Ring.BET5X_XPATH)
         self.bet50x = self.driver.find_element(By.XPATH, Ring.BET50X_XPATH)
 
+    def do_bet(self, trx_size: int, bet_multiplier: Bet):
+        print('betting', trx_size, 'trx at', bet_multiplier)
     
     def wait_for_ring_state(self, state: RingState) -> None:
         WebDriverWait(self.driver, 100).until(self.WaitForState(state))

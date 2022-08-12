@@ -11,25 +11,16 @@ sys.path.append(path3)
 sys.path.append(path4)
 sys.path.append(path5)
 
-from UI.ringwindow import RingWindow
+from UI.mainwindow import MainWindow
 from PyQt6.QtWidgets import QApplication
 
 
 def main():
     app = QApplication(sys.argv)
-    window = RingWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
 
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-

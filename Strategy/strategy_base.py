@@ -7,9 +7,9 @@ class ABCQObjectMeta(type(ABC), type(QObject)):
     pass
 
 class Strategy(ABC, QObject, metaclass=ABCQObjectMeta):
-    win = pyqtSignal()
-    lose = pyqtSignal()
-    do_bet = pyqtSignal(object, object) # bet_trx_amount, bet_multiplier
+    on_win = pyqtSignal()
+    on_lose = pyqtSignal()
+    do_bet = pyqtSignal(object, object) # bet_trx_amount: int, bet_multiplier: Bet
     
     @abstractmethod
     def ring_result(self, bet: Bet):
