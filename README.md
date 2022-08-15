@@ -1,6 +1,7 @@
 # winkPy
 ### How to use:
 - Install requirements.txt (in venv)
+- activate venv
 - run main.py
 - Click "Start Ring"
 - IMPORTANT STEP: Make sure the platform is ready for the bot to work on: 
