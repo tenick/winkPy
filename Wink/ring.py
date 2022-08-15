@@ -7,7 +7,7 @@ BET3X_XPATH = '//div[@class="bet-button-click-value" and contains(.,"3")]'
 BET5X_XPATH = '//div[@class="bet-button-click-value" and contains(.,"5") and not(contains(.,"0"))]'
 BET50X_XPATH = '//div[@class="bet-button-click-value" and contains(.,"5") and contains(.,"0")]'
 
-TRX_BET_AMOUNT_INPUT_XPATH = '//div[@class="bet-button-click-value" and contains(.,"5") and contains(.,"0")]'
+TRX_BET_AMOUNT_INPUT_XPATH = '//div[@class="bet-button-input-amount-container"]/input'
 
 
 HISTORY_XPATH = '//ul[@class="ring-history"]'

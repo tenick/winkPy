@@ -1,8 +1,10 @@
 import re
 from enum import IntEnum
 from collections import deque
+import traceback
 from typing import Callable
 import time
+import logging
 
 import ring as Ring
 from ring import Bet
@@ -20,25 +22,31 @@ class RingState(IntEnum):
 
 
 class RingDriver:
-    def GetCurrentRingState(self,) -> RingState:
+    def GetCurrentRingState(self) -> RingState:
         wheel = self.driver.find_element(By.XPATH, Ring.WHEEL_CURRENT_STATE_XPATH)
-        wheel_class = wheel.get_attribute('class')
 
-        if wheel_class[len(wheel_class)-4:len(wheel_class)] == 'hide' or 'C' in wheel.text or 'T' in wheel.text:
+        try:
+            if len(wheel.text) > 0 and wheel.text[0].isdigit():
+                return RingState.CAN_BET
+            else:
+                return RingState.CANT_BET
+        except Exception as e:
+            logging.error(traceback.format_exc())
             return RingState.CANT_BET
-        else:
-            return RingState.CAN_BET
 
     @staticmethod
     def WaitForState(state: RingState) -> Callable[[uc.Chrome], bool]:
         def _predicate(driver: uc.Chrome):
             wheel = driver.find_element(By.XPATH, Ring.WHEEL_CURRENT_STATE_XPATH)
-            wheel_class = wheel.get_attribute('class')
-
-            if wheel_class[len(wheel_class)-4:len(wheel_class)] == 'hide' or 'C' in wheel.text or 'T' in wheel.text:
+            
+            try:
+                if len(wheel.text) > 0 and wheel.text[0].isdigit():
+                    return state == RingState.CAN_BET
+                else:
+                    return state == RingState.CANT_BET
+            except Exception as e:
+                logging.error(traceback.format_exc())
                 return state == RingState.CANT_BET
-            else:
-                return state == RingState.CAN_BET
 
         return _predicate
     
@@ -67,23 +75,30 @@ class RingDriver:
     def do_bet(self, trx_size: int, bet_multiplier: Bet):
         # set the bet amount input first (if necessary)
         self.trx_bet_amount_input.click()
-        val = self.trx_bet_amount_input.get_attribute('value')
-        if int(val) != trx_size:
-            for _ in range(7):
-                self.trx_bet_amount_input.send_keys(Keys.BACK_SPACE)
+        wink_trx_bet_size = self.trx_bet_amount_input.get_attribute('value')
+        time.sleep(0.04)
+        if int(wink_trx_bet_size) != trx_size:
+            # selecting textbox contents to be overrided
+            self.trx_bet_amount_input.send_keys(Keys.CONTROL + "a")
+            time.sleep(0.08) # 80 ms
+
+            # entering digit by digit
+            for digit in str(trx_size):
+                self.trx_bet_amount_input.send_keys(digit)
                 time.sleep(0.08) # 80 ms
-            self.trx_bet_amount_input.send_keys(str(trx_size))
+        
         time.sleep(0.1)
+
         # then proceed bet
-        # match bet_multiplier:
-        #     case Bet.X2:
-        #         self.bet2x.click()
-        #     case Bet.X3:
-        #         self.bet3x.click()
-        #     case Bet.X5:
-        #         self.bet5x.click()
-        #     case Bet.X50:
-        #         self.bet50x.click()
+        match bet_multiplier:
+            case Bet.X2:
+                self.bet2x.click()
+            case Bet.X3:
+                self.bet3x.click()
+            case Bet.X5:
+                self.bet5x.click()
+            case Bet.X50:
+                self.bet50x.click()
         
         print('betting', trx_size, 'trx at', bet_multiplier)
     
