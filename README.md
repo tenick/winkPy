@@ -1,6 +1,7 @@
 # winkPy
 ### How to use:
-- Install requirements.txt (in venv)
+- Create venv (Python >=3.10) and activate it
+- Install requirements.txt
 - activate venv
 - run main.py
 - Click "Start Ring"
